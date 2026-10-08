@@ -1,0 +1,22 @@
+name: Build
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: 解压
+        run: unzip -q oneUI-github-build-fixed.zip -d src
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: 构建
+        run: |
+          cd "$(dirname "$(find src -name gradlew | head -1)")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk
+          path: src/**/build/outputs/apk/**/*.apk
