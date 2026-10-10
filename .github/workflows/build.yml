@@ -5,45 +5,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Unzip source
-        run: unzip -q oneUI-v9.zip -d src
-
+      - run: unzip -q oneUI-v9.zip -d src
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept licenses & install packages
-        run: |
-          yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-37" "build-tools;36.0.0" "platform-tools"
-
+          java-version: 21
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 9.5.0
-
       - name: 构建
-        env:
-          GRADLE_OPTS: -Xmx4g -Dorg.gradle.daemon=false
-          JAVA_TOOL_OPTIONS: -Xmx4g
         run: |
           D="$(dirname "$(find src -name settings.gradle.kts | head -1)")"
           cd "$D"
           echo "sdk.dir=$ANDROID_HOME" > local.properties
-          # 确保有足够堆内存
-          if [ -f gradle.properties ]; then
-            grep -q 'org.gradle.jvmargs' gradle.properties || echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' >> gradle.properties
-          else
-            echo 'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g' > gradle.properties
-          fi
           gradle assembleDebug --no-daemon --stacktrace
-
       - uses: actions/upload-artifact@v4
         with:
           name: apk
           path: src/**/build/outputs/apk/**/*.apk
-          if-no-files-found: error
